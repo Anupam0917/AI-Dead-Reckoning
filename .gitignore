@@ -1,0 +1,48 @@
+# Python environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter / Python tooling
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Frontend build
+frontend/dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated outputs
+outputs/
+
+# Raw datasets
+data/raw/
+
+# Experimental processed results
+data/processed/*
+!data/processed/production_real_sensor_predictions.csv
+
+# Root virtual-environment executables accidentally placed in Scripts/
+Scripts/*.exe
+Scripts/activate
+Scripts/activate.bat
+Scripts/activate.fish
+Scripts/Activate.ps1
+Scripts/deactivate.bat
+Scripts/jsonpointer
