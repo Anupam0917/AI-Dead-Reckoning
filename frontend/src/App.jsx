@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import MapView from "./components/MapView";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://ai-dead-reckoning-production.up.railway.app";
 
 function App() {
   const [data, setData] = useState(null);
@@ -14,20 +14,26 @@ function App() {
   // Fetch one sample from FastAPI
   const fetchSample = async (time) => {
     try {
-      const response = await fetch(
-  `${API_URL}/api/sample?time_s=${time.toFixed(3)}`
-);
+      const url = `${API_URL}/api/sample?time_s=${time.toFixed(3)}`;
+
+      console.log("Fetching:", url);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error("API request failed");
+        throw new Error(
+          `API request failed: ${response.status} ${response.statusText}`
+        );
       }
 
       const result = await response.json();
 
+      console.log("Fetched sample:", result);
+
       setData(result);
       setError("");
     } catch (err) {
-      console.error(err);
+      console.error("Backend error:", err);
       setError("Backend connection failed");
     }
   };
@@ -39,11 +45,17 @@ function App() {
 
   // Run simulation
   useEffect(() => {
-    if (!running) return;
+    if (!running) {
+      return;
+    }
+
+    console.log("Simulation started");
 
     const timer = setInterval(() => {
       setSimulationTime((previous) => {
         const next = previous + 0.5;
+
+        console.log("Simulation time:", next);
 
         if (next >= 8560) {
           setRunning(false);
@@ -54,28 +66,39 @@ function App() {
       });
     }, 500);
 
-    return () => clearInterval(timer);
+    return () => {
+      console.log("Simulation timer stopped");
+      clearInterval(timer);
+    };
   }, [running]);
 
   // Fetch new sensor/model data whenever simulation time changes
   useEffect(() => {
+    console.log("Simulation time changed:", simulationTime);
+
     fetchSample(simulationTime);
   }, [simulationTime]);
 
   // Start normal navigation
   const startNavigation = () => {
+    console.log("START NAVIGATION clicked");
+
     setGnssLost(false);
     setRunning(true);
   };
 
   // Simulate GNSS outage
   const simulateGnssLoss = () => {
+    console.log("SIMULATE GNSS LOSS clicked");
+
     setGnssLost(true);
     setRunning(true);
   };
 
   // Reset simulation
   const resetSimulation = () => {
+    console.log("RESET clicked");
+
     setRunning(false);
     setGnssLost(false);
     setSimulationTime(8500);

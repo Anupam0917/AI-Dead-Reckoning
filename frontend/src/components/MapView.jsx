@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -29,7 +29,11 @@ function MapView({ data, gnssLost, simulationTime }) {
 
   const [position, setPosition] = useState(initialPosition);
   const [trajectory, setTrajectory] = useState([initialPosition]);
-  const [lastTime, setLastTime] = useState(null);
+
+  // Keep navigation state in refs so updating it
+  // does not continuously retrigger the main effect.
+  const positionRef = useRef(initialPosition);
+  const lastTimeRef = useRef(null);
 
   useEffect(() => {
     if (!data) return;
@@ -43,32 +47,38 @@ function MapView({ data, gnssLost, simulationTime }) {
         Number(data.longitude),
       ];
 
+      positionRef.current = start;
+      lastTimeRef.current = currentTime;
+
       setPosition(start);
       setTrajectory([start]);
-      setLastTime(currentTime);
+
       return;
     }
 
-    // GNSS available: use dataset position
+    // GNSS available
     if (!gnssLost) {
       const gpsPosition = [
         Number(data.latitude),
         Number(data.longitude),
       ];
 
+      positionRef.current = gpsPosition;
+      lastTimeRef.current = currentTime;
+
       setPosition(gpsPosition);
 
       setTrajectory((previous) => {
         const updated = [...previous, gpsPosition];
-
         return updated.slice(-300);
       });
 
-      setLastTime(currentTime);
       return;
     }
 
     // GNSS lost: continue using AI velocity
+    const lastTime = lastTimeRef.current;
+
     if (lastTime !== null) {
       const dt = Math.max(
         0,
@@ -83,8 +93,8 @@ function MapView({ data, gnssLost, simulationTime }) {
       const northMovement = vn * dt;
       const eastMovement = ve * dt;
 
-      const currentLat = position[0];
-      const currentLon = position[1];
+      const currentLat = positionRef.current[0];
+      const currentLon = positionRef.current[1];
 
       const newLat =
         currentLat +
@@ -103,23 +113,18 @@ function MapView({ data, gnssLost, simulationTime }) {
 
       const aiPosition = [newLat, newLon];
 
+      positionRef.current = aiPosition;
+
       setPosition(aiPosition);
 
       setTrajectory((previous) => {
         const updated = [...previous, aiPosition];
-
         return updated.slice(-300);
       });
     }
 
-    setLastTime(currentTime);
-  }, [
-    data,
-    gnssLost,
-    simulationTime,
-    lastTime,
-    position,
-  ]);
+    lastTimeRef.current = currentTime;
+  }, [data, gnssLost, simulationTime]);
 
   return (
     <MapContainer
